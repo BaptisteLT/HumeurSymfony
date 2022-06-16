@@ -1,0 +1,160 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello IndexController!{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('css/index.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@^3"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@^2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1"></script>
+{% endblock %}
+
+{% block body %}
+
+
+
+    <div class="h-100 d-flex align-items-center justify-content-center" id="align-middle">
+        <div class="row">
+            <div class="col-12">
+                <div class="col-12">
+                    {{ form_start(humeurDescriptionForm) }}
+                        <div class="d-flex justify-content-center">
+                            {{ form_label(humeurDescriptionForm.description, 'Describe your day or experience 🥺 (facultative)', {'label_attr': {'id': 'description_label', 'class': 'mt-5 mb-2'}}) }}
+                        </div>
+                        {{ form_row(humeurDescriptionForm.description) }}
+                        
+                    {{ form_end(humeurDescriptionForm, {render_rest: false}) }}
+                </div>
+                <div class="d-flex flex-row bg-info mt-4">
+                    {% for humeurType in humeurTypes %}
+                        <img data-id="{{ humeurType.id }}" class="emoji_face" src="{{ asset('img/') }}{{ humeurType.image }}" alt="{{ humeurType.libelle }}">
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="myChart" width="800" height="400"></canvas>
+
+    <script>
+        $(".emoji_face").click(function(event) {
+            console.log($("#humeur_description_description").val())
+            $.ajax({
+                method: "POST",
+                url: "{{ path('todaysMood') }}",
+                data: { id: event.currentTarget.getAttribute('data-id'), description: $("#humeur_description_description").val() }
+            })
+            .done(function(returnData) {
+                generateGraph(returnData)//TODO retourner les data qu'il faut bien c'est à dire toutes les humeurs de l'utilisateur pour l'année, avec le humeurlevel
+            });
+            //alert('toto');
+        });
+    </script>
+
+    <script>
+    //TODO eventuellement trouver comment afficher la description quelque part
+        /*Fonction qui va générer le gradient https://www.chartjs.org/docs/3.1.0/samples/advanced/linear-gradient.html*/
+        let width, height, gradient;
+        function getGradient(ctx, chartArea) {
+            const chartWidth = chartArea.right - chartArea.left;
+            const chartHeight = chartArea.bottom - chartArea.top;
+            if (gradient === null || width !== chartWidth || height !== chartHeight) {
+                // Create the gradient because this is either the first render
+                // or the size of the chart has changed
+                width = chartWidth;
+                height = chartHeight;
+                gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                gradient.addColorStop(0.2, 'rgb(247, 67, 94)');
+                gradient.addColorStop(0.4, 'rgb(255, 144, 44)');
+                gradient.addColorStop(0.6, 'rgb(254, 224, 32)');
+                gradient.addColorStop(0.8, 'rgb(130, 214, 57)');
+                gradient.addColorStop(1, 'rgb(13, 201, 148)');
+            }
+
+            return gradient;
+        }
+
+        function generateGraph(data)
+        {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            let chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        //Toutes nos données, avec l'heure et la date, plus le hapiness level
+                        data: [{
+                            //TODO
+                            //En gros il faudra faire un call ajax pour récupérer le jour et le HapinessLevel
+                            x: '2021-11-06 23:39:30',
+                            y: 3.3
+                        }, {
+                            x: '2021-11-07 01:00:28',
+                            y: 3.5
+                        }, {
+                            x: '2021-11-15 09:00:28',
+                            y: 1
+                        }, {
+                            x: '2021-11-15 19:00:28',
+                            y: 1
+                        }, {
+                            x: '2022-11-15 02:00:28',
+                            y: 1
+                        }],
+                        //Nom de la ligne
+                        label: 'Hapiness level',
+                        //couleur du background
+                        backgroundColor: 'rgb(255, 99, 132)',
+                        //couleur de la ligne
+                        borderColor: function(context) {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+
+                            if (!chartArea) {
+                            // This case happens on initial chart load
+                            return null;
+                            }
+                            return getGradient(ctx, chartArea);
+                        },
+                    }],
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: 'rgb(255, 99, 132)',
+                                boxWidth:30
+                            }
+                        }
+                    },
+                    //On met le graphe en responsive
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            //Vu que c'est tous les mois on commence par un début de mois ex: 2021-01-01 00:00:00
+                            min: '2021-01-01 00:00:00',
+                            //On n'affiche pas les jours sinon ça met un gros pavé (mettre à true pour voir)
+                            display: false
+                        },
+                        xAxis: {
+                            // The axis for this scale is determined from the first letter of the id as `'x'`
+                            // It is recommended to specify `position` and / or `axis` explicitly.
+                            type: 'time',
+                            time: {
+                                parser: 'YYYY-MM-DD',
+                                unit: 'month',
+                                displayFormats: {
+                                    //Format affiché pour chaque mois
+                                    month: 'MM/YY'
+                                },
+                                tooltipFormat: 'DD/MM/YY'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+    </script>
+{% endblock %}
