@@ -4,9 +4,14 @@
 
 {% block stylesheets %}
     <link rel="stylesheet" href="{{ asset('css/index.css') }}">
+    {#Bootstrap CSS#}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    {#Chartjs#}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@^3"></script>
-<script src="https://cdn.jsdelivr.net/npm/moment@^2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.3/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1"></script>
+    {#Bootstrap JS Bundle#}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 {% endblock %}
 
 {% block body %}
@@ -30,24 +35,46 @@
                         <img data-id="{{ humeurType.id }}" class="emoji_face" src="{{ asset('img/') }}{{ humeurType.image }}" alt="{{ humeurType.libelle }}">
                     {% endfor %}
                 </div>
+                <div class="d-flex justify-content-center mt-4">
+                    <button class="humeur_button" id="skip_button">SKIP</button>
+                </div>
             </div>
         </div>
     </div>
-
+        
     <canvas id="myChart" width="800" height="400"></canvas>
 
     <script>
         $(".emoji_face").click(function(event) {
-            console.log($("#humeur_description_description").val())
             $.ajax({
                 method: "POST",
                 url: "{{ path('todaysMood') }}",
                 data: { id: event.currentTarget.getAttribute('data-id'), description: $("#humeur_description_description").val() }
             })
             .done(function(returnData) {
+                //On supprime le choix
+                $('#align-middle').empty();
+                $('#align-middle').append('<h2 class="mt-5 mb-4">Mood evolution throughout the year</h2>');
+
+                //Génère le chart dès qu'on a reçu les données
                 generateGraph(returnData)//TODO retourner les data qu'il faut bien c'est à dire toutes les humeurs de l'utilisateur pour l'année, avec le humeurlevel
             });
-            //alert('toto');
+        });
+        $("#skip_button").click(function(event) {
+            $.ajax({
+                method: "POST",
+                url: "{{ path('todaysMood') }}",
+                data: {}
+            })
+            .done(function(returnData) {
+                console.log(returnData)
+                //On supprime le choix
+                $('#align-middle').empty();
+                $('#align-middle').append('<h2 class="mt-5 mb-4">Mood evolution throughout the year</h2>');
+
+                //Génère le chart dès qu'on a reçu les données
+                generateGraph(returnData)//TODO retourner les data qu'il faut bien c'est à dire toutes les humeurs de l'utilisateur pour l'année, avec le humeurlevel
+            });
         });
     </script>
 
@@ -74,32 +101,26 @@
             return gradient;
         }
 
-        function generateGraph(data)
+        function generateGraph(dataReturned)
         {
+            //Récupère la date minimum de l'année courante (1 janvier)
+            var minYearDate = new Date(new Date().getFullYear(), 0, 1);
+            //Récupère la date maximum de l'année courante (31 décembre)
+            var maxYearDate = new Date(new Date().getFullYear(), 11, 31);
+
+            var data = [];
+
+            dataReturned.forEach(function(humeur){
+                data.push({x: humeur['created_at'], y: humeur['humeurType']['hapinessLevel']})
+            });
+
             const ctx = document.getElementById('myChart').getContext('2d');
             let chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     datasets: [{
                         //Toutes nos données, avec l'heure et la date, plus le hapiness level
-                        data: [{
-                            //TODO
-                            //En gros il faudra faire un call ajax pour récupérer le jour et le HapinessLevel
-                            x: '2021-11-06 23:39:30',
-                            y: 3.3
-                        }, {
-                            x: '2021-11-07 01:00:28',
-                            y: 3.5
-                        }, {
-                            x: '2021-11-15 09:00:28',
-                            y: 1
-                        }, {
-                            x: '2021-11-15 19:00:28',
-                            y: 1
-                        }, {
-                            x: '2022-11-15 02:00:28',
-                            y: 1
-                        }],
+                        data:data,
                         //Nom de la ligne
                         label: 'Hapiness level',
                         //couleur du background
@@ -132,24 +153,25 @@
                     maintainAspectRatio: true,
                     scales: {
                         x: {
-                            //Vu que c'est tous les mois on commence par un début de mois ex: 2021-01-01 00:00:00
-                            min: '2021-01-01 00:00:00',
-                            //On n'affiche pas les jours sinon ça met un gros pavé (mettre à true pour voir)
-                            display: false
-                        },
-                        xAxis: {
-                            // The axis for this scale is determined from the first letter of the id as `'x'`
-                            // It is recommended to specify `position` and / or `axis` explicitly.
+                            //On indique que x est une date
                             type: 'time',
+                            //Vu que c'est tous les mois on commence par un début de mois ex: 2021-01-01 00:00:00
+                            min: minYearDate,
+                            max: maxYearDate,
+                            //2021-01-01 00:00:00
+                            //On affiche en bas par mois
                             time: {
-                                parser: 'YYYY-MM-DD',
-                                unit: 'month',
-                                displayFormats: {
+                                    parser: 'YYYY-MM-DD',
+                                    unit: 'month',//Ou day, year, etc
+                                    tooltipFormat: 'DD/MM/YY',//Format affiché quand on passe sur un point
+                                    displayFormats: {
                                     //Format affiché pour chaque mois
-                                    month: 'MM/YY'
-                                },
-                                tooltipFormat: 'DD/MM/YY'
-                            }
+                                        month: 'MM/YY',
+                                    },
+                            },
+                            //ticks
+                            //On n'affiche pas les jours sinon ça met un gros pavé (mettre à true pour voir)
+                            display: true
                         }
                     }
                 }

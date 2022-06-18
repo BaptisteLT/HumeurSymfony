@@ -6,6 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 use App\Repository\HumeurTypeRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: HumeurTypeRepository::class)]
 class HumeurType
@@ -24,6 +25,7 @@ class HumeurType
     #[ORM\OneToMany(mappedBy: 'humeurType', targetEntity: Humeur::class)]
     private $humeur;
 
+    #[Groups(["humeurG"])]
     #[ORM\Column(type: 'integer', unique: true)]
     private $hapinessLevel;
 

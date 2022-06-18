@@ -39,6 +39,22 @@ class HumeurRepository extends ServiceEntityRepository
         }
     }
 
+
+    /**
+     * @return Humeur[] Returns an array of Humeur objects
+     */
+    public function findByUserAndYear($user, $beginningOfYear, $endOfYear): array
+    {
+        return $this->createQueryBuilder('h')
+            ->andWhere('h.user = :user')
+            ->andWhere('h.created_at BETWEEN :minDate AND :maxDate')
+            ->setParameters(['user' => $user,'minDate' => $beginningOfYear, 'maxDate' => $endOfYear])
+            ->orderBy('h.created_at', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
 //    /**
 //     * @return Humeur[] Returns an array of Humeur objects
 //     */

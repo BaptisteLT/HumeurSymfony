@@ -1,0 +1,8 @@
+
+
+<form action="{{ url('my_day_post_delete', { id: post.id }) }}" method="post">
+    {# the argument of csrf_token() is an arbitrary string used to generate the token #}
+    <input type="hidden" name="token" value="{{ csrf_token('delete-item') }}"/>
+
+    <button class="btn btn-primary" type="submit">Delete</button>
+</form>

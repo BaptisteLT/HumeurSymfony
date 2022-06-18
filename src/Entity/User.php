@@ -13,8 +13,6 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
-#[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
-#[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -34,9 +32,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'User', targetEntity: Humeur::class, orphanRemoval: true)]
     private $humeurs;
 
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: MyDayPost::class, orphanRemoval: true)]
+    private $myDayPosts;
+
     public function __construct()
     {
         $this->humeurs = new ArrayCollection();
+        $this->myDayPosts = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -156,5 +158,40 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, MyDayPost>
+     */
+    public function getMyDayPosts(): Collection
+    {
+        return $this->myDayPosts;
+    }
+
+    public function addMyDayPost(MyDayPost $myDayPost): self
+    {
+        if (!$this->myDayPosts->contains($myDayPost)) {
+            $this->myDayPosts[] = $myDayPost;
+            $myDayPost->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMyDayPost(MyDayPost $myDayPost): self
+    {
+        if ($this->myDayPosts->removeElement($myDayPost)) {
+            // set the owning side to null (unless already changed)
+            if ($myDayPost->getUser() === $this) {
+                $myDayPost->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function __toString()
+    {
+        return $this->email;
     }
 }
