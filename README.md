@@ -6,6 +6,8 @@ Les utilisateurs peuvent poster leur expériences de la journée avec les autres
 
 - Puis exécuter les fixtures avec php bin/console d:f:l
 
+- Puis faire un symfony:serve
+
 - Se connecter avec le compte de test qui a été généré avec les fixtures pour avoir des données déjà populées.
 Email: comptedetest@test.fr
 MDP: comptedetest

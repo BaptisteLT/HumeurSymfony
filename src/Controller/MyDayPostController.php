@@ -90,9 +90,9 @@ class MyDayPostController extends AbstractController
 
             $entityManager->persist($post);
             $entityManager->flush();
+            $this->addFlash('success', 'Post edited!');
 
-
-            return $this->redirectToRoute('my_day_post_view',['slug'=>$post->$post->getId()]);
+            return $this->redirectToRoute('my_day_post_view',['slug'=>$post->getSlug()]);
         }
 
         return $this->renderForm('my_day_post/edit.html.twig', [
@@ -134,6 +134,7 @@ class MyDayPostController extends AbstractController
            }
            $entityManager->persist($post);
            $entityManager->flush();
+           $this->addFlash('success', 'Post created!');
 
             return $this->redirectToRoute('my_day_post_view',['slug'=>$post->getSlug()]);
         }
@@ -155,6 +156,8 @@ class MyDayPostController extends AbstractController
 
         $entityManager->remove($post);
         $entityManager->flush();
+
+        $this->addFlash('success', 'Post deleted!');
 
         return $this->redirectToRoute('my_own_posts');
 
